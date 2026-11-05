@@ -1,6 +1,6 @@
 export type TaskPriority = 'low' | 'medium' | 'high';
 
-export interface Task {
+export default interface Task {
     id: number;
     title: string;
     description: string;
