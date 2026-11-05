@@ -18,3 +18,7 @@ const initialTasks: Task[] = [
         category: 'TypeScript',
     },
 ];
+
+export function getInitialTasks(): Task[] {
+  return initialTasks;
+}
