@@ -1,7 +1,7 @@
 import Header from "./components/Header.tsx";
 import TaskForm from "./components/TaskForm.tsx";
 import TaskList from "./components/TaskList.tsx";
-// import EditTaskDialog from "./components/EditTaskDialog.tsx";
+import EditTaskDialog from "./components/EditTaskDialog.tsx";
 import type Task from "./types/task.ts";
 import { useEffect, useState } from "react";
 import { getInitialTasks } from "./data/initialTasks.ts";
@@ -9,7 +9,6 @@ import { getInitialTasks } from "./data/initialTasks.ts";
 const STORAGE_KEY = "study_planner_tasks";
 
 export default function App() {
-
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -74,7 +73,6 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       <Header onCreateTask={handleCreateTaskScroll} />
 
-
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/*<TaskStats stats={stats} />*/}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -90,6 +88,15 @@ export default function App() {
           </div>
         </div>
       </main>
+
+      <EditTaskDialog
+        task={editingTask}
+        open={Boolean(editingTask)}
+        onOpenChange={(open) => {
+          if (!open) setEditingTask(null);
+        }}
+        onSave={handleUpdateTask}
+      />
     </div>
   );
 }
