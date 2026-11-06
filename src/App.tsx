@@ -1,14 +1,24 @@
 import Header from "./components/Header.tsx";
 import TaskForm from "./components/TaskForm.tsx";
 import TaskList from "./components/TaskList.tsx";
+import TaskFilters from "./components/TaskFilters.tsx";
 import EditTaskDialog from "./components/EditTaskDialog.tsx";
-import type Task from "./types/task.ts";
-import { useEffect, useState } from "react";
-import { getInitialTasks } from "./data/initialTasks.ts";
 import TaskStats from "./components/TaskStats.tsx";
+import type Task from "./types/task.ts";
 import type TaskStatsData from "./types/taskStatsData.ts";
+import type { TaskFilterState } from "./types";
+import { useEffect, useState, useMemo } from "react";
+import { getInitialTasks } from "./data/initialTasks.ts";
 
 const STORAGE_KEY = "study_planner_tasks";
+
+const initialFilters: TaskFilterState = {
+  search: "",
+  status: "all",
+  subject: "all",
+  priority: "all",
+  sortBy: "deadline-asc",
+};
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -27,6 +37,7 @@ export default function App() {
   });
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [filters, setFilters] = useState<TaskFilterState>(initialFilters);
 
   const total = tasks.length;
   const completed = tasks.filter((t) => t.completed).length;
@@ -39,6 +50,74 @@ export default function App() {
     pending,
     completionPercentage,
   };
+
+  const counts = {
+    all: total,
+    active: pending,
+    completed,
+  };
+
+  const availableSubjects = useMemo(() => {
+    return Array.from(new Set(tasks.map((t) => t.category).filter(Boolean)));
+  }, [tasks]);
+
+  const isFiltered =
+    filters.search.trim() !== "" ||
+    filters.status !== "all" ||
+    filters.subject !== "all" ||
+    filters.priority !== "all" ||
+    filters.sortBy !== "deadline-asc";
+
+  function handleResetFilters() {
+    setFilters(initialFilters);
+  }
+
+  const filteredTasks = useMemo(() => {
+    return tasks
+      .filter((task) => {
+        // Search in title or description
+        if (filters.search.trim()) {
+          const query = filters.search.toLowerCase().trim();
+          const matchesTitle = task.title.toLowerCase().includes(query);
+          const matchesDesc = task.description?.toLowerCase().includes(query);
+          if (!matchesTitle && !matchesDesc) {
+            return false;
+          }
+        }
+
+        // Status filter
+        if (filters.status === "active" && task.completed) {
+          return false;
+        }
+        if (filters.status === "completed" && !task.completed) {
+          return false;
+        }
+
+        // Subject / Category filter
+        if (filters.subject !== "all" && task.category !== filters.subject) {
+          return false;
+        }
+
+        // Priority filter
+        return !(filters.priority !== "all" && task.priority !== filters.priority);
+      })
+      .sort((a, b) => {
+        switch (filters.sortBy) {
+          case "priority-desc": {
+            const weights = { high: 3, medium: 2, low: 1 };
+            return weights[b.priority] - weights[a.priority];
+          }
+          case "title-asc":
+            return a.title.localeCompare(b.title, "uk", { sensitivity: "base" });
+          case "created-desc":
+            return b.id - a.id;
+          case "deadline-asc":
+          case "deadline-desc":
+          default:
+            return 0;
+        }
+      });
+  }, [tasks, filters]);
 
   function handleCreateTaskScroll(): void {
     const formElement = document.getElementById("task-form");
@@ -75,6 +154,10 @@ export default function App() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }
 
+  function handleMarkAllComplete() {
+    setTasks((prev) => prev.map((t) => ({ ...t, completed: true })));
+  }
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -91,13 +174,22 @@ export default function App() {
         <TaskStats stats={stats} />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <TaskForm onSubmitTask={handleCreateTask} />
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 space-y-4">
+            <TaskFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              availableSubjects={availableSubjects}
+              counts={counts}
+            />
             <TaskList
-              tasks={tasks}
+              tasks={filteredTasks}
               totalTasksCount={tasks.length}
               onToggleComplete={handleToggleComplete}
+              onMarkAllComplete={handleMarkAllComplete}
               onEdit={setEditingTask}
               onDelete={handleDeleteTask}
+              isFiltered={isFiltered}
+              onResetFilters={handleResetFilters}
             />
           </div>
         </div>
