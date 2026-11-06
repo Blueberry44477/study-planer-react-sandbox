@@ -5,6 +5,8 @@ import EditTaskDialog from "./components/EditTaskDialog.tsx";
 import type Task from "./types/task.ts";
 import { useEffect, useState } from "react";
 import { getInitialTasks } from "./data/initialTasks.ts";
+import TaskStats from "./components/TaskStats.tsx";
+import type TaskStatsData from "./types/taskStatsData.ts";
 
 const STORAGE_KEY = "study_planner_tasks";
 
@@ -25,6 +27,18 @@ export default function App() {
   });
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+  const pending = total - completed;
+  const completionPercentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  const stats: TaskStatsData = {
+    total,
+    completed,
+    pending,
+    completionPercentage,
+  };
 
   function handleCreateTaskScroll(): void {
     const formElement = document.getElementById("task-form");
@@ -74,7 +88,7 @@ export default function App() {
       <Header onCreateTask={handleCreateTaskScroll} />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/*<TaskStats stats={stats} />*/}
+        <TaskStats stats={stats} />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <TaskForm onSubmitTask={handleCreateTask} />
           <div className="lg:col-span-7">
