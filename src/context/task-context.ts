@@ -1,10 +1,19 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
+import type { AsyncListStatus } from "../hooks/useTasksQuery.ts";
 import type Task from "../types/task.ts";
 import type { TaskFilterState } from "../types";
 import type { ToastData } from "../types";
 
 export interface TaskContextValue {
   tasks: Task[];
+  listStatus: AsyncListStatus;
+  listError: string | null;
+  page: number;
+  limit: number;
+  totalTasks: number;
+  totalPages: number;
+  setPage: (nextPage: number) => void;
+  retryLoadTasks: () => void;
   pendingDeleteId: number | null;
   filters: TaskFilterState;
   setFilters: Dispatch<SetStateAction<TaskFilterState>>;

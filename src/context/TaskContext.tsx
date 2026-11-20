@@ -1,35 +1,28 @@
-import { useEffect, useReducer, useState, type ReactNode } from "react";
-import { getInitialTasks } from "../data/initialTasks.ts";
-import { readStorageValue, useLocalStorage, writeStorageValue } from "../hooks/useLocalStorage.ts";
-import { DEFAULT_FILTERS,  isValidTaskFilterState,  isValidTaskList } from "../lib/taskUtils.ts";
+import { useCallback, useEffect, useReducer, useState, type ReactNode } from "react";
+import { useLocalStorage } from "../hooks/useLocalStorage.ts";
+import { useTasksQuery } from "../hooks/useTasksQuery.ts";
+import { DEFAULT_FILTERS, isValidTaskFilterState } from "../lib/taskUtils.ts";
 import { taskReducer, type TaskReducerState } from "../reducers/taskReducer.ts";
 import type Task from "../types/task.ts";
 import type { TaskFilterState } from "../types";
 import type { ToastData, ToastVariant } from "../types";
 import { TaskContext } from "./task-context.ts";
 
-const TASKS_STORAGE_KEY = "study_planner_tasks";
 const FILTERS_STORAGE_KEY = "study_planner_filters";
 const DELETE_UNDO_DELAY_MS = 5000;
 const TOAST_DEFAULT_DURATION_MS = 3500;
 
-function createInitialTaskState(): TaskReducerState {
-  return {
-    tasks: readStorageValue(TASKS_STORAGE_KEY, getInitialTasks(), isValidTaskList),
-    pendingDeleteId: null,
-  };
-}
+const INITIAL_TASK_STATE: TaskReducerState = {
+  tasks: [],
+  pendingDeleteId: null,
+};
 
 interface TaskProviderProps {
   children: ReactNode;
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
-  const [state, dispatch] = useReducer(
-    taskReducer,
-    undefined,
-    createInitialTaskState
-  );
+  const [state, dispatch] = useReducer(taskReducer, INITIAL_TASK_STATE);
   const [filters, setFilters] = useLocalStorage<TaskFilterState>(
     FILTERS_STORAGE_KEY,
     DEFAULT_FILTERS,
@@ -37,6 +30,21 @@ export function TaskProvider({ children }: TaskProviderProps) {
   );
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
+
+  const handleTasksLoaded = useCallback((loadedTasks: Task[]) => {
+    dispatch({ type: "setTasks", payload: loadedTasks });
+  }, []);
+
+  const {
+    status: listStatus,
+    error: listError,
+    page,
+    limit,
+    total: totalTasks,
+    totalPages,
+    setPage,
+    retry: retryLoadTasks,
+  } = useTasksQuery({ onTasksLoaded: handleTasksLoaded });
 
   function showToast(
     message: string,
@@ -59,11 +67,6 @@ export function TaskProvider({ children }: TaskProviderProps) {
       isUndoDelete: options?.isUndoDelete,
     }));
   }
-
-  // Sync tasks list to localStorage whenever tasks state changes.
-  useEffect(() => {
-    writeStorageValue(TASKS_STORAGE_KEY, state.tasks);
-  }, [state.tasks]);
 
   // Derived active tasks count synchronized with browser tab title.
   const activeTasksCount = state.tasks.filter((task) => !task.completed).length;
@@ -248,10 +251,10 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }
 
   function resetTasks(): void {
-    dispatch({ type: "reset" });
     setEditingTask(null);
-    showToast("Дані скинуто", "info", {
-      description: "Відновлено початковий список завдань.",
+    retryLoadTasks();
+    showToast("Список оновлено", "info", {
+      description: "Завантажено актуальні завдання із сервера.",
     });
   }
 
@@ -267,6 +270,14 @@ export function TaskProvider({ children }: TaskProviderProps) {
     <TaskContext
       value={{
         tasks: state.tasks,
+        listStatus,
+        listError,
+        page,
+        limit,
+        totalTasks,
+        totalPages,
+        setPage,
+        retryLoadTasks,
         pendingDeleteId: state.pendingDeleteId,
         filters,
         setFilters,

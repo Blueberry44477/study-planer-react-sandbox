@@ -1,4 +1,3 @@
-import { getInitialTasks } from "../data/initialTasks.ts";
 import type Task from "../types/task.ts";
 
 export interface TaskReducerState {
@@ -7,6 +6,7 @@ export interface TaskReducerState {
 }
 
 export type TaskAction =
+  | { type: "setTasks"; payload: Task[] }
   | { type: "add"; payload: Task }
   | { type: "toggle"; payload: { id: number } }
   | { type: "update"; payload: Task }
@@ -21,6 +21,12 @@ export function taskReducer(
   action: TaskAction
 ): TaskReducerState {
   switch (action.type) {
+    case "setTasks":
+      return {
+        tasks: action.payload,
+        pendingDeleteId: null,
+      };
+
     case "add":
       return {
         ...state,
@@ -97,7 +103,7 @@ export function taskReducer(
 
     case "reset":
       return {
-        tasks: getInitialTasks(),
+        tasks: [],
         pendingDeleteId: null,
       };
 
