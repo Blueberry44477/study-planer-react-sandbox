@@ -10,6 +10,7 @@ export type TaskAction =
   | { type: "add"; payload: Task }
   | { type: "toggle"; payload: { id: number } }
   | { type: "update"; payload: Task }
+  | { type: "delete"; payload: { id: number } }
   | { type: "requestDelete"; payload: { id: number } }
   | { type: "confirmDelete"; payload: { id: number } }
   | { type: "undoDelete" }
@@ -55,6 +56,16 @@ export function taskReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.payload.id ? action.payload : task
         ),
+      };
+
+    case "delete":
+      return {
+        ...state,
+        tasks: state.tasks.filter((task) => task.id !== action.payload.id),
+        pendingDeleteId:
+          state.pendingDeleteId === action.payload.id
+            ? null
+            : state.pendingDeleteId,
       };
 
     case "requestDelete": {

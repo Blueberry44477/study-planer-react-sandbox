@@ -20,9 +20,14 @@ export interface TaskContextValue {
   resetFilters: () => void;
   editingTask: Task | null;
   setEditingTask: Dispatch<SetStateAction<Task | null>>;
-  addTask: (taskData: Omit<Task, "id" | "completed">) => boolean;
-  updateTask: (updatedTask: Task) => boolean;
-  toggleTask: (id: number) => void;
+  selectedTaskId: number | null;
+  setSelectedTaskId: Dispatch<SetStateAction<number | null>>;
+  deletingTask: Task | null;
+  setDeletingTask: Dispatch<SetStateAction<Task | null>>;
+  addTask: (taskData: Omit<Task, "id" | "completed">) => Promise<boolean>;
+  updateTask: (updatedTask: Task) => Promise<boolean>;
+  toggleTask: (id: number) => Promise<void>;
+  deleteTask: (id: number) => Promise<boolean>;
   requestDelete: (id: number) => void;
   undoDelete: () => void;
   markAllComplete: () => void;
