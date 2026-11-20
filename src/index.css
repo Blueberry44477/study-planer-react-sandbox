@@ -1,1 +1,108 @@
 @import "tailwindcss";
+
+/* Visually hidden utility (preserves accessibility tree) */
+.visually-hidden {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Native <progress> custom styling (separate vendor rules for browser compatibility) */
+.styled-progress {
+  appearance: none;
+  border: 0 solid;
+  overflow: clip;
+  border-radius: 9999px;
+  background-color: var(--progress-track, rgb(226 232 240));
+}
+
+.styled-progress::-webkit-progress-bar {
+  background-color: transparent;
+}
+
+.styled-progress::-webkit-progress-value {
+  background-color: var(--progress-fill, rgb(79 70 229));
+  border-radius: 9999px;
+  transition: inline-size 0.2s ease-out;
+}
+
+.styled-progress::-moz-progress-bar {
+  background-color: var(--progress-fill, rgb(79 70 229));
+  border-radius: 9999px;
+  transition: inline-size 0.2s ease-out;
+}
+
+/* Continuous countdown bar inside Toast needs instant per-frame updates */
+.styled-progress--countdown::-webkit-progress-value {
+  transition: none;
+}
+
+.styled-progress--countdown::-moz-progress-bar {
+  transition: none;
+}
+
+/* Toast Top-Layer positioning and entry/exit animation */
+.app-toast {
+  position: fixed;
+  inset: auto 1rem 1rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: calc(100vw - 2rem);
+  max-width: 24rem;
+  overflow: visible;
+  opacity: 0;
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.2s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+@media (min-width: 640px) {
+  .app-toast {
+    inset: auto 1.5rem 1.5rem auto;
+    width: 24rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-toast {
+    transform: translateY(0.75rem);
+  }
+}
+
+.app-toast:is(:popover-open, [data-open="true"]) {
+  display: block;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-toast:is(:popover-open, [data-open="true"]) {
+    transform: translateY(0);
+  }
+}
+
+@starting-style {
+  .app-toast:is(:popover-open, [data-open="true"]) {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .app-toast:is(:popover-open, [data-open="true"]) {
+      transform: translateY(0.75rem);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-toast {
+    transition-duration: 0.08s;
+  }
+}
