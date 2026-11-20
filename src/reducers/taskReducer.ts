@@ -1,4 +1,3 @@
-import { getInitialTasks } from "../data/initialTasks.ts";
 import type Task from "../types/task.ts";
 
 export interface TaskReducerState {
@@ -7,9 +6,11 @@ export interface TaskReducerState {
 }
 
 export type TaskAction =
+  | { type: "setTasks"; payload: Task[] }
   | { type: "add"; payload: Task }
   | { type: "toggle"; payload: { id: number } }
   | { type: "update"; payload: Task }
+  | { type: "delete"; payload: { id: number } }
   | { type: "requestDelete"; payload: { id: number } }
   | { type: "confirmDelete"; payload: { id: number } }
   | { type: "undoDelete" }
@@ -21,6 +22,12 @@ export function taskReducer(
   action: TaskAction
 ): TaskReducerState {
   switch (action.type) {
+    case "setTasks":
+      return {
+        tasks: action.payload,
+        pendingDeleteId: null,
+      };
+
     case "add":
       return {
         ...state,
@@ -49,6 +56,16 @@ export function taskReducer(
         tasks: state.tasks.map((task) =>
           task.id === action.payload.id ? action.payload : task
         ),
+      };
+
+    case "delete":
+      return {
+        ...state,
+        tasks: state.tasks.filter((task) => task.id !== action.payload.id),
+        pendingDeleteId:
+          state.pendingDeleteId === action.payload.id
+            ? null
+            : state.pendingDeleteId,
       };
 
     case "requestDelete": {
@@ -97,7 +114,7 @@ export function taskReducer(
 
     case "reset":
       return {
-        tasks: getInitialTasks(),
+        tasks: [],
         pendingDeleteId: null,
       };
 

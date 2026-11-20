@@ -11,6 +11,7 @@ interface TaskFormProps {
 
 interface FormState {
   error?: string;
+  success?: string;
 }
 
 const PRIORITY_OPTIONS: ReadonlyArray<{
@@ -107,7 +108,7 @@ export default function TaskForm({
     }
 
     if (editingTask) {
-      updateTask({
+      await updateTask({
         ...editingTask,
         title: submittedTitle,
         description: submittedDescription,
@@ -118,7 +119,7 @@ export default function TaskForm({
       return null;
     }
 
-    const created = addTask({
+    const created = await addTask({
       title: submittedTitle,
       description: submittedDescription,
       priority: submittedPriority,
@@ -130,6 +131,7 @@ export default function TaskForm({
       setCategory("");
       setPriority("medium");
       setDescription("");
+      return { success: "Завдання успішно створено" };
     }
 
     return null;
@@ -137,6 +139,7 @@ export default function TaskForm({
 
   const [state, formAction, isPending] = useActionState(actionHandler, null);
   const visibleError = errorClearedOnEdit ? undefined : state?.error;
+  const visibleSuccess = errorClearedOnEdit ? undefined : state?.success;
 
   function handleReset() {
     setTitle("");
@@ -342,6 +345,15 @@ export default function TaskForm({
               : "Додати завдання"}
         </button>
       </div>
+
+      {!isEditMode && visibleSuccess && (
+        <p
+          role="status"
+          className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2"
+        >
+          {visibleSuccess}
+        </p>
+      )}
     </form>
   );
 

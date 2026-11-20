@@ -1,5 +1,7 @@
+import DeleteTaskDialog from "./components/DeleteTaskDialog.tsx";
 import EditTaskDialog from "./components/EditTaskDialog.tsx";
 import Header from "./components/Header.tsx";
+import TaskDetailsDialog from "./components/TaskDetailsDialog.tsx";
 import TaskFilters from "./components/TaskFilters.tsx";
 import TaskForm from "./components/TaskForm.tsx";
 import TaskList from "./components/TaskList.tsx";
@@ -36,7 +38,9 @@ export default function App() {
           </div>
         </main>
 
+        <TaskDetailsDialog />
         <EditTaskDialog />
+        <DeleteTaskDialog />
         <Toast />
       </div>
     </TaskProvider>

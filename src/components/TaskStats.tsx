@@ -4,13 +4,13 @@ import { useTaskContext } from "../hooks/useTaskContext.ts";
 import type TaskStatsData from "../types/taskStatsData.ts";
 
 export default function TaskStats() {
-  const { tasks } = useTaskContext();
+  const { tasks, totalTasks } = useTaskContext();
   const progressId = useId();
 
   // Derived statistics computed directly during render (no useEffect).
-  const total = tasks.length;
+  const total = totalTasks > 0 ? totalTasks : tasks.length;
   const completed = tasks.filter((task) => task.completed).length;
-  const pending = total - completed;
+  const pending = Math.max(0, total - completed);
   const completionPercentage =
     total === 0 ? 0 : Math.round((completed / total) * 100);
 
