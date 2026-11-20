@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Eye,
   Pencil,
   Tag,
   Trash2,
@@ -42,9 +43,10 @@ export default function TaskItem({ task }: TaskItemProps) {
   const {
     pendingDeleteId,
     toggleTask,
-    requestDelete,
     undoDelete,
     setEditingTask,
+    setSelectedTaskId,
+    setDeletingTask,
   } = useTaskContext();
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -182,6 +184,14 @@ export default function TaskItem({ task }: TaskItemProps) {
           <>
             <button
               type="button"
+              onClick={() => setSelectedTaskId(task.id)}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
+              aria-label={`Деталі завдання "${task.title}"`}
+            >
+              <Eye className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               onClick={() => setEditingTask(task)}
               className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
               aria-label={`Редагувати завдання "${task.title}"`}
@@ -190,7 +200,7 @@ export default function TaskItem({ task }: TaskItemProps) {
             </button>
             <button
               type="button"
-              onClick={() => requestDelete(task.id)}
+              onClick={() => setDeletingTask(task)}
               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
               aria-label={`Видалити завдання "${task.title}"`}
             >
