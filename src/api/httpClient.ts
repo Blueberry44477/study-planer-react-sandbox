@@ -26,9 +26,14 @@ export interface RequestOptions {
 }
 
 let onUnauthorizedHandler: (() => void) | null = null;
+let refreshTokenHandler: (() => Promise<string | null>) | null = null;
 
 export function setUnauthorizedHandler(handler: (() => void) | null): void {
     onUnauthorizedHandler = handler;
+}
+
+export function setRefreshHandler(handler: (() => Promise<string | null>) | null): void {
+    refreshTokenHandler = handler;
 }
 
 function buildUrl(
@@ -75,40 +80,13 @@ async function refreshAccessToken(): Promise<string | null> {
         return refreshPromise;
     }
 
-    const currentRefresh = authStore.getRefreshToken();
-    if (!currentRefresh) {
+    if (!refreshTokenHandler) {
         return null;
     }
 
-    refreshPromise = (async () => {
-        try {
-            const res = await fetch(buildUrl('/auth/refresh'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ refreshToken: currentRefresh }),
-            });
-
-            if (!res.ok) {
-                authStore.clearTokens();
-                return null;
-            }
-
-            const data = (await res.json()) as {
-                accessToken: string;
-                refreshToken: string;
-            };
-            authStore.setAccessToken(data.accessToken);
-            authStore.setRefreshToken(data.refreshToken);
-            return data.accessToken;
-        } catch {
-            authStore.clearTokens();
-            return null;
-        } finally {
-            refreshPromise = null;
-        }
-    })();
+    refreshPromise = refreshTokenHandler().finally(() => {
+        refreshPromise = null;
+    });
 
     return refreshPromise;
 }
