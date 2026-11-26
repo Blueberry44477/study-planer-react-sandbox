@@ -1,3 +1,5 @@
+import {authStore} from '../auth/authStore.ts';
+
 const RAW_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
 
@@ -19,6 +21,14 @@ export interface RequestOptions {
     headers?: HeadersInit;
     signal?: AbortSignal;
     params?: Record<string, string | number | boolean | undefined>;
+    requiresAuth?: boolean;
+    retried?: boolean;
+}
+
+let onUnauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+    onUnauthorizedHandler = handler;
 }
 
 function buildUrl(
@@ -58,13 +68,71 @@ async function parseErrorMessage(response: Response): Promise<string | undefined
     return undefined;
 }
 
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+    if (refreshPromise) {
+        return refreshPromise;
+    }
+
+    const currentRefresh = authStore.getRefreshToken();
+    if (!currentRefresh) {
+        return null;
+    }
+
+    refreshPromise = (async () => {
+        try {
+            const res = await fetch(buildUrl('/auth/refresh'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ refreshToken: currentRefresh }),
+            });
+
+            if (!res.ok) {
+                authStore.clearTokens();
+                return null;
+            }
+
+            const data = (await res.json()) as {
+                accessToken: string;
+                refreshToken: string;
+            };
+            authStore.setAccessToken(data.accessToken);
+            authStore.setRefreshToken(data.refreshToken);
+            return data.accessToken;
+        } catch {
+            authStore.clearTokens();
+            return null;
+        } finally {
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
+}
+
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', body, headers, signal, params } = options;
+    const { method = 'GET', body, headers, signal, params, requiresAuth, retried } = options;
     const url = buildUrl(endpoint, params);
 
     const requestHeaders = new Headers(headers);
     if (body !== undefined && !requestHeaders.has('Content-Type')) {
         requestHeaders.set('Content-Type', 'application/json');
+    }
+
+    if (requiresAuth) {
+        let token = authStore.getAccessToken();
+        if (!token && authStore.getRefreshToken()) {
+            token = await refreshAccessToken();
+        }
+        if (!token) {
+            onUnauthorizedHandler?.();
+            throw new HttpError(401, 'Unauthorized', 'Authentication is needed');
+        }
+
+        requestHeaders.set('Authorization', `Bearer ${token}`);
     }
 
     const response = await fetch(url, {
@@ -73,6 +141,14 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
         body: body !== undefined ? JSON.stringify(body) : undefined,
         signal,
     });
+
+    if (response.status === 401 && requiresAuth && !retried) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+            return request<T>(endpoint, { ...options, retried: true });
+        }
+        onUnauthorizedHandler?.();
+    }
 
     if (!response.ok) {
         const errorMessage = await parseErrorMessage(response);
