@@ -24,7 +24,9 @@ export interface TaskContextValue {
   setSelectedTaskId: Dispatch<SetStateAction<number | null>>;
   deletingTask: Task | null;
   setDeletingTask: Dispatch<SetStateAction<Task | null>>;
-  addTask: (taskData: Omit<Task, "id" | "completed">) => Promise<boolean>;
+  addTask: (
+    taskData: Omit<Task, "id" | "completed" | "createdBy" | "createdAt">
+  ) => Promise<boolean>;
   updateTask: (updatedTask: Task) => Promise<boolean>;
   toggleTask: (id: number) => Promise<void>;
   deleteTask: (id: number) => Promise<boolean>;

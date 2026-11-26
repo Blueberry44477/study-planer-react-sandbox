@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useReducer, useState, type ReactNode } from "react";
+import { use, useCallback, useEffect, useReducer, useState, type ReactNode } from "react";
+import { AuthContext } from "../auth/context/authContext.ts";
+import { authStore } from "../auth/authStore.ts";
 import { useLocalStorage } from "../hooks/useLocalStorage.ts";
 import { useTasksQuery } from "../hooks/useTasksQuery.ts";
 import { DEFAULT_FILTERS, isValidTaskFilterState } from "../lib/taskUtils.ts";
@@ -23,6 +25,7 @@ interface TaskProviderProps {
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
+  const auth = use(AuthContext);
   const [state, dispatch] = useReducer(taskReducer, INITIAL_TASK_STATE);
   const [filters, setFilters] = useLocalStorage<TaskFilterState>(
     FILTERS_STORAGE_KEY,
@@ -124,8 +127,15 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }, [toast]);
 
   async function addTask(
-    taskData: Omit<Task, "id" | "completed">
+    taskData: Omit<Task, "id" | "completed" | "createdBy" | "createdAt">
   ): Promise<boolean> {
+    if (!authStore.isAuthenticated()) {
+      showToast("Потрібна авторизація", "error", {
+        description: "Увійдіть у систему, щоб створювати завдання.",
+      });
+      return false;
+    }
+
     const trimmedTitle = taskData.title.trim();
     if (!trimmedTitle) {
       showToast("Помилка створення завдання", "error", {
@@ -141,6 +151,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
         priority: taskData.priority,
         category: taskData.category.trim() || "General",
         completed: false,
+        createdBy: auth?.user?.username ?? "User",
+        createdAt: new Date().toISOString(),
       });
 
       const hasCollision = state.tasks.some((t) => t.id === createdTask.id);
@@ -169,6 +181,13 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }
 
   async function updateTask(updatedTask: Task): Promise<boolean> {
+    if (!authStore.isAuthenticated()) {
+      showToast("Потрібна авторизація", "error", {
+        description: "Увійдіть у систему, щоб редагувати завдання.",
+      });
+      return false;
+    }
+
     const trimmedTitle = updatedTask.title.trim();
     if (!trimmedTitle) {
       showToast("Помилка редагування", "error", {
@@ -217,6 +236,13 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }
 
   async function toggleTask(id: number): Promise<void> {
+    if (!authStore.isAuthenticated()) {
+      showToast("Потрібна авторизація", "error", {
+        description: "Увійдіть у систему, щоб змінювати статус завдання.",
+      });
+      return;
+    }
+
     if (state.pendingDeleteId === id) {
       showToast("Дія недоступна", "error", {
         description: "Спочатку скасуйте видалення завдання.",
@@ -247,6 +273,13 @@ export function TaskProvider({ children }: TaskProviderProps) {
   }
 
   async function deleteTask(id: number): Promise<boolean> {
+    if (!authStore.isAuthenticated()) {
+      showToast("Потрібна авторизація", "error", {
+        description: "Увійдіть у систему, щоб видаляти завдання.",
+      });
+      return false;
+    }
+
     const targetTask = state.tasks.find((task) => task.id === id);
     if (!targetTask) {
       showToast("Помилка видалення", "error", {
