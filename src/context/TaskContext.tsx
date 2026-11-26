@@ -1,17 +1,13 @@
 import { use, useCallback, useEffect, useReducer, useState, type ReactNode } from "react";
 import { AuthContext } from "../auth/context/authContext.ts";
 import { authStore } from "../auth/authStore.ts";
-import { useLocalStorage } from "../hooks/useLocalStorage.ts";
 import { useTasksQuery } from "../hooks/useTasksQuery.ts";
-import { DEFAULT_FILTERS, isValidTaskFilterState } from "../lib/taskUtils.ts";
 import { taskReducer, type TaskReducerState } from "../reducers/taskReducer.ts";
 import { taskRepository } from "../repositories/taskRepository.ts";
 import type Task from "../types/task.ts";
-import type { TaskFilterState } from "../types";
 import type { ToastData, ToastVariant } from "../types";
 import { TaskContext } from "./task-context.ts";
 
-const FILTERS_STORAGE_KEY = "study_planner_filters";
 const DELETE_UNDO_DELAY_MS = 5000;
 const TOAST_DEFAULT_DURATION_MS = 3500;
 
@@ -27,11 +23,6 @@ interface TaskProviderProps {
 export function TaskProvider({ children }: TaskProviderProps) {
   const auth = use(AuthContext);
   const [state, dispatch] = useReducer(taskReducer, INITIAL_TASK_STATE);
-  const [filters, setFilters] = useLocalStorage<TaskFilterState>(
-    FILTERS_STORAGE_KEY,
-    DEFAULT_FILTERS,
-    isValidTaskFilterState
-  );
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
@@ -364,10 +355,6 @@ export function TaskProvider({ children }: TaskProviderProps) {
     });
   }
 
-  function resetFilters(): void {
-    setFilters(DEFAULT_FILTERS);
-  }
-
   function dismissToast(): void {
     setToast(null);
   }
@@ -385,9 +372,6 @@ export function TaskProvider({ children }: TaskProviderProps) {
         setPage,
         retryLoadTasks,
         pendingDeleteId: state.pendingDeleteId,
-        filters,
-        setFilters,
-        resetFilters,
         editingTask,
         setEditingTask,
         selectedTaskId,

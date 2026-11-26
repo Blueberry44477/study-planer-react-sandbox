@@ -10,6 +10,7 @@ import {
   SearchX,
 } from "lucide-react";
 import { useTaskContext } from "../hooks/useTaskContext.ts";
+import { useTaskFilters } from "../hooks/useTaskFilters.ts";
 import { filterAndSortTasks, hasActiveFilters } from "../lib/taskUtils.ts";
 import TaskItem from "./TaskItem.tsx";
 
@@ -25,10 +26,10 @@ export default function TaskList() {
     setPage,
     retryLoadTasks,
     pendingDeleteId,
-    filters,
-    resetFilters,
     markAllComplete,
   } = useTaskContext();
+
+  const { filters, resetFilters } = useTaskFilters();
 
   // Derived filtered list computed directly during render (no useEffect).
   const filteredTasks = filterAndSortTasks(tasks, filters);

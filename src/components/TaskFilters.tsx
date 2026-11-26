@@ -1,11 +1,13 @@
 import { useId } from "react";
 import { AlertCircle, ArrowUpDown, Search, Tag, X } from "lucide-react";
 import { useTaskContext } from "../hooks/useTaskContext.ts";
+import { useTaskFilters } from "../hooks/useTaskFilters.ts";
 import { hasActiveFilters } from "../lib/taskUtils.ts";
 import type { Priority, SortOption } from "../types";
 
 export default function TaskFilters() {
-  const { tasks, filters, setFilters, resetFilters } = useTaskContext();
+  const { tasks } = useTaskContext();
+  const { filters, updateFilter, resetFilters } = useTaskFilters();
 
   const searchId = useId();
   const subjectId = useId();
@@ -41,16 +43,14 @@ export default function TaskFilters() {
             id={searchId}
             type="search"
             value={filters.search}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, search: e.target.value }))
-            }
+            onChange={(e) => updateFilter("search", e.target.value)}
             placeholder="Пошук за назвою або примітками..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-slate-900 placeholder:text-slate-400"
           />
           {filters.search && (
             <button
               type="button"
-              onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
+              onClick={() => updateFilter("search", "")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer"
               aria-label="Очистити пошук"
             >
@@ -68,7 +68,7 @@ export default function TaskFilters() {
           <button
             type="button"
             aria-pressed={filters.status === "all"}
-            onClick={() => setFilters((prev) => ({ ...prev, status: "all" }))}
+            onClick={() => updateFilter("status", "all")}
             className={`px-3 py-1.5 rounded-md transition-all focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer ${
               filters.status === "all"
                 ? "bg-white text-slate-900 font-semibold shadow-xs"
@@ -80,9 +80,7 @@ export default function TaskFilters() {
           <button
             type="button"
             aria-pressed={filters.status === "active"}
-            onClick={() =>
-              setFilters((prev) => ({ ...prev, status: "active" }))
-            }
+            onClick={() => updateFilter("status", "active")}
             className={`px-3 py-1.5 rounded-md transition-all focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer ${
               filters.status === "active"
                 ? "bg-white text-indigo-700 font-semibold shadow-xs"
@@ -94,9 +92,7 @@ export default function TaskFilters() {
           <button
             type="button"
             aria-pressed={filters.status === "completed"}
-            onClick={() =>
-              setFilters((prev) => ({ ...prev, status: "completed" }))
-            }
+            onClick={() => updateFilter("status", "completed")}
             className={`px-3 py-1.5 rounded-md transition-all focus-visible:outline-2 focus-visible:outline-indigo-600 cursor-pointer ${
               filters.status === "completed"
                 ? "bg-white text-emerald-700 font-semibold shadow-xs"
@@ -119,9 +115,7 @@ export default function TaskFilters() {
           <select
             id={subjectId}
             value={filters.subject}
-            onChange={(e) =>
-              setFilters((prev) => ({ ...prev, subject: e.target.value }))
-            }
+            onChange={(e) => updateFilter("subject", e.target.value)}
             className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
           >
             <option value="all">Всі предмети</option>
@@ -150,10 +144,7 @@ export default function TaskFilters() {
             id={priorityId}
             value={filters.priority}
             onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                priority: e.target.value as "all" | Priority,
-              }))
+              updateFilter("priority", e.target.value as "all" | Priority)
             }
             className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
           >
@@ -177,10 +168,7 @@ export default function TaskFilters() {
             id={sortId}
             value={filters.sortBy}
             onChange={(e) =>
-              setFilters((prev) => ({
-                ...prev,
-                sortBy: e.target.value as SortOption,
-              }))
+              updateFilter("sortBy", e.target.value as SortOption)
             }
             className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
           >

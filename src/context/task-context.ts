@@ -1,7 +1,6 @@
 import { createContext, type Dispatch, type SetStateAction } from "react";
 import type { AsyncListStatus } from "../hooks/useTasksQuery.ts";
 import type Task from "../types/task.ts";
-import type { TaskFilterState } from "../types";
 import type { ToastData } from "../types";
 
 export interface TaskContextValue {
@@ -15,9 +14,6 @@ export interface TaskContextValue {
   setPage: (nextPage: number) => void;
   retryLoadTasks: () => void;
   pendingDeleteId: number | null;
-  filters: TaskFilterState;
-  setFilters: Dispatch<SetStateAction<TaskFilterState>>;
-  resetFilters: () => void;
   editingTask: Task | null;
   setEditingTask: Dispatch<SetStateAction<Task | null>>;
   selectedTaskId: number | null;
