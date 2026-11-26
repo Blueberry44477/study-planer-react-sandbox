@@ -43,6 +43,8 @@ export interface CreateTaskInput {
     description?: string;
     priority?: TaskPriority;
     category?: string;
+    createdBy?: string;
+    createdAt?: string;
 }
 
 export interface UpdateTaskInput {
@@ -59,6 +61,8 @@ function toTask(
         description?: string;
         priority?: TaskPriority;
         category?: string;
+        createdBy?: string;
+        createdAt?: string;
     },
 ): Task {
     return {
@@ -68,6 +72,9 @@ function toTask(
         completed: todo.completed,
         priority: clientMetadata?.priority ?? DEFAULT_PRIORITY,
         category: clientMetadata?.category ?? DEFAULT_CATEGORY,
+        // Client-owned metadata: DummyJSON /todos does not provide author or creation timestamp
+        createdBy: clientMetadata?.createdBy ?? `User #${todo.userId}`,
+        createdAt: clientMetadata?.createdAt ?? new Date().toISOString(),
     };
 }
 
@@ -95,16 +102,22 @@ export const taskRepository = {
     },
 
     async create(task: CreateTaskInput): Promise<Task> {
-        const created = await httpClient.post<ApiTodo>('/todos/add', {
-            todo: task.title,
-            completed: task.completed ?? false,
-            userId: DEFAULT_USER_ID,
-        });
+        const created = await httpClient.post<ApiTodo>(
+            '/todos/add',
+            {
+                todo: task.title,
+                completed: task.completed ?? false,
+                userId: DEFAULT_USER_ID,
+            },
+            { requiresAuth: true },
+        );
 
         return toTask(created, {
             description: task.description,
             priority: task.priority,
             category: task.category,
+            createdBy: task.createdBy,
+            createdAt: task.createdAt,
         });
     },
 
@@ -117,7 +130,9 @@ export const taskRepository = {
             payload.completed = task.completed;
         }
 
-        const updated = await httpClient.patch<ApiTodo>(`/todos/${id}`, payload);
+        const updated = await httpClient.patch<ApiTodo>(`/todos/${id}`, payload, {
+            requiresAuth: true,
+        });
 
         return toTask(updated, {
             description: task.description,
@@ -127,6 +142,8 @@ export const taskRepository = {
     },
 
     async delete(id: number): Promise<void> {
-        await httpClient.delete<DeleteTodoResponse>(`/todos/${id}`);
+        await httpClient.delete<DeleteTodoResponse>(`/todos/${id}`, {
+            requiresAuth: true,
+        });
     },
 };
