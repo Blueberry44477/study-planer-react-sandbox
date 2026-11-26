@@ -7,4 +7,7 @@ export default interface Task {
     completed: boolean;
     priority: TaskPriority;
     category: string;
+    // Client-owned metadata (not provided by DummyJSON /todos API)
+    createdBy: string;
+    createdAt: string;
 }

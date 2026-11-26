@@ -8,6 +8,8 @@ const initialTasks: Task[] = [
     completed: false,
     priority: "high",
     category: "React",
+    createdBy: "emilys",
+    createdAt: "2026-11-20T09:00:00.000Z",
   },
   {
     id: 2,
@@ -16,6 +18,8 @@ const initialTasks: Task[] = [
     completed: true,
     priority: "medium",
     category: "TypeScript",
+    createdBy: "emilys",
+    createdAt: "2026-11-20T10:00:00.000Z",
   },
 ];
 
